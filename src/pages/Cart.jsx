@@ -1,3 +1,7 @@
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { CheckoutForm } from "./CheckoutForm";
+
 import { Add, Remove } from "@material-ui/icons";
 import { useSelector } from "react-redux";
 import styled from "styled-components";
@@ -10,7 +14,8 @@ import { useEffect, useState } from "react";
 import {publicRequest,userRequest } from "../requestMethods";
 import { useHistory } from "react-router";
 import axios from "axios";
-const KEY =process.env.STRIPE_API_KEY;
+const KEY="pk_test_51MVeFESCVcQff5PAb3O8JWV06WWNcDknAuf0hsPnJuztJkj8q8yj3leR6vQqJpUCfEybTyvGTiZjHb8lR8moQxYe00hcZQ7tTJ";
+const stripeTestPromise = loadStripe(KEY);
 
 
 const Container = styled.div``;
@@ -169,20 +174,20 @@ const Cart = () => {
     setStripeToken(token);
   };
 
-  useEffect(() => {
-    const makeRequest = async () => {
-      try {
-        const res = await axios.post("http://localhost:4000/api/v1//payment", {
-          tokenId: stripeToken.id,
-          amount: cart.total,
-        });
-        history.push("/success", {
-          stripeData: res.data,
-          products: cart, });
-      } catch {}
-    };
-    stripeToken && makeRequest();
-  }, [stripeToken, cart.total, history]);
+  // useEffect(() => {
+  //   const makeRequest = async () => {
+  //     try {
+  //       const res = await axios.post("http://localhost:4000/api/v1/checkout/payment", {
+  //         tokenId: stripeToken.id,
+  //         amount: 500,
+  //       });
+  //       history.push("/success", {
+  //         stripeData: res.data,
+  //         products: cart, });
+  //     } catch {}
+  //   };
+  //   stripeToken && makeRequest();
+  // }, [stripeToken, cart.total, history]);
   return (
     <Container>
       <Navbar />
@@ -244,18 +249,9 @@ const Cart = () => {
               <SummaryItemText>Total</SummaryItemText>
               <SummaryItemPrice>INR {cart.total}</SummaryItemPrice>
             </SummaryItem>
-            <StripeCheckout
-              name="TSHIRT SHOP"
-              image="https://avatars.githubusercontent.com/u/1486366?v=4"
-              billingAddress
-              shippingAddress
-              description={`Your total is $${cart.total}`}
-              amount={cart.total}
-              token={onToken}
-              stripeKey={process.env.STRIPE_API_KEY}
-            >
-              <Button>CHECKOUT NOW</Button>
-            </StripeCheckout>
+            <Elements stripe={stripeTestPromise}>
+                <CheckoutForm amount={cart.total * 100} cartproducts={cart.products} />
+             </Elements>
           </Summary>
         </Bottom>
       </Wrapper>
