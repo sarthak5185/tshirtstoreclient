@@ -1,7 +1,3 @@
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-import { CheckoutForm } from "./CheckoutForm";
-
 import { Add, Remove } from "@material-ui/icons";
 import { useSelector } from "react-redux";
 import styled from "styled-components";
@@ -14,8 +10,7 @@ import { useEffect, useState } from "react";
 import {publicRequest,userRequest } from "../requestMethods";
 import { useHistory } from "react-router";
 import axios from "axios";
-const KEY="pk_test_51MVeFESCVcQff5PAb3O8JWV06WWNcDknAuf0hsPnJuztJkj8q8yj3leR6vQqJpUCfEybTyvGTiZjHb8lR8moQxYe00hcZQ7tTJ";
-const stripeTestPromise = loadStripe(KEY);
+const KEY ="pk_test_51MVeFESCVcQff5PAb3O8JWV06WWNcDknAuf0hsPnJuztJkj8q8yj3leR6vQqJpUCfEybTyvGTiZjHb8lR8moQxYe00hcZQ7tTJ";
 
 
 const Container = styled.div``;
@@ -169,17 +164,41 @@ const Cart = () => {
   const cart = useSelector((state) => state.cart);
   const [stripeToken, setStripeToken] = useState(null);
   const history = useHistory();
-
   const onToken = (token) => {
     setStripeToken(token);
   };
-
+  function makepRequest()
+  {
+    let items=[];
+    cart.products.map((product)=>{
+      items.push(product);
+    });
+    console.log(items);
+    fetch("http://localhost:4000/api/v1/checkout/payment", {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization":{KEY},                                 //?with your stripe secret key
+    },
+    body:JSON.stringify(items),
+  }).then(res => {
+      if (res.ok) return res.json()
+      return res.json().then(json => Promise.reject(json))
+    })
+    .then(({ url }) => {
+      window.location = url
+    })
+    .catch(e => {
+      console.error(e.error)
+    })
+  }
   // useEffect(() => {
   //   const makeRequest = async () => {
   //     try {
-  //       const res = await axios.post("http://localhost:4000/api/v1/checkout/payment", {
+  //       const res = await axios.post("http://localhost:4000/api/v1//payment", {
   //         tokenId: stripeToken.id,
-  //         amount: 500,
+  //         amount: cart.total,
   //       });
   //       history.push("/success", {
   //         stripeData: res.data,
@@ -249,9 +268,7 @@ const Cart = () => {
               <SummaryItemText>Total</SummaryItemText>
               <SummaryItemPrice>INR {cart.total}</SummaryItemPrice>
             </SummaryItem>
-            <Elements stripe={stripeTestPromise}>
-                <CheckoutForm amount={cart.total * 100} cartproducts={cart.products} />
-             </Elements>
+              <Button onClick={makepRequest}>CHECKOUT NOW</Button>
           </Summary>
         </Bottom>
       </Wrapper>
