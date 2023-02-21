@@ -1,44 +1,49 @@
-import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js"
-import axios from "axios"
-import React, { useState } from 'react'
+import { useState } from "react";
+import {PaymentElement,CardElement,useStripe,useElements} from '@stripe/react-stripe-js';
 
-
-export const CheckoutForm = ({amount,cartproducts}) => 
+export const CheckoutForm = ({secret,clientamount,cartproducts}) => 
 {
-    const [success, setSuccess ] = useState(false)
-    const stripe = useStripe()
-    const elements = useElements()
-
+    const stripe = useStripe();
+    const elements = useElements();
+    const [message, setMessage] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+  
     const handleSubmit = async (e) => {
-        e.preventDefault()
-        const {error, paymentMethod} = await stripe.createPaymentMethod({
-            type: "card",
-            card: elements.getElement(CardElement)
-        })
-
-    if(!error) {
-        try {
-            const {id} = paymentMethod;
-            console.log(`ID IS ${id}`);
-            const response = await axios.post("http://localhost:4000/api/v1/checkout/payment", {
-                amount:{amount},
-                id,
-            })
-            if(response.data.success) {
-                console.log("Successful payment")
-                setSuccess(true)
-            }
-        } catch (error) {
-            console.log("Error", error)
+      e.preventDefault();
+  
+      if (!stripe || !elements) {
+        return;
+      }
+      setIsProcessing(true);
+      console.log(window.location.origin);
+      console.log(`secret is ${secret}`);
+      const {error:stripeError,paymentIntent} = await stripe.confirmCardPayment(
+        secret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: 'Jenny Rosen',
+            },
+            return_url: `${window.location.origin}/completion`,
+          },
         }
-    } else {
-        console.log(error.message)
-    }
+      );
+      if(stripeError)
+      {
+        setMessage(stripeError.message);
+      }
+      else
+      {
+        setMessage(`Payment ${paymentIntent.status}: ${paymentIntent.id}`)
+      }
+      setIsProcessing(false);
 };
 return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400 }}>
-    <CardElement />
-    <button>Pay</button>
+    <form id="payment-form" onSubmit={handleSubmit}>
+    <label htmlFor="card">Card</label>
+    <CardElement id="card" />
+    <button type="submit">Pay</button>
     </form>
-);
-};
+  );
+}

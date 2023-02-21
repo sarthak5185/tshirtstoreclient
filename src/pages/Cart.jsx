@@ -1,3 +1,7 @@
+import {Elements,CardElement, useStripe, useElements} from '@stripe/react-stripe-js';
+import { loadStripe } from "@stripe/stripe-js";
+import { CheckoutForm } from "./CheckoutForm";
+
 import { Add, Remove } from "@material-ui/icons";
 import { useSelector } from "react-redux";
 import styled from "styled-components";
@@ -10,7 +14,7 @@ import { useEffect, useState } from "react";
 import {publicRequest,userRequest } from "../requestMethods";
 import { useHistory } from "react-router";
 import axios from "axios";
-const KEY ="pk_test_51MVeFESCVcQff5PAb3O8JWV06WWNcDknAuf0hsPnJuztJkj8q8yj3leR6vQqJpUCfEybTyvGTiZjHb8lR8moQxYe00hcZQ7tTJ";
+
 
 
 const Container = styled.div``;
@@ -162,51 +166,38 @@ const Button = styled.button`
 
 const Cart = () => {
   const cart = useSelector((state) => state.cart);
-  const [stripeToken, setStripeToken] = useState(null);
+  const [stripePromise, setStripePromise] = useState(null);
+  const [clientSecret, setClientSecret] = useState("")
   const history = useHistory();
-  const onToken = (token) => {
-    setStripeToken(token);
-  };
-  function makepRequest()
-  {
-    let items=[];
-    cart.products.map((product)=>{
-      items.push(product);
-    });
-    console.log(items);
-    fetch("http://localhost:4000/api/v1/checkout/payment", {
-    method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization":{KEY},                                 //?with your stripe secret key
-    },
-    body:JSON.stringify(items),
-  }).then(res => {
-      if (res.ok) return res.json()
-      return res.json().then(json => Promise.reject(json))
-    })
-    .then(({ url }) => {
-      window.location = url
-    })
-    .catch(e => {
-      console.error(e.error)
-    })
-  }
-  // useEffect(() => {
-  //   const makeRequest = async () => {
-  //     try {
-  //       const res = await axios.post("http://localhost:4000/api/v1//payment", {
-  //         tokenId: stripeToken.id,
-  //         amount: cart.total,
-  //       });
-  //       history.push("/success", {
-  //         stripeData: res.data,
-  //         products: cart, });
-  //     } catch {}
-  //   };
-  //   stripeToken && makeRequest();
-  // }, [stripeToken, cart.total, history]);
+
+  useEffect(() => {
+    const stripekey= async () => {
+      try {
+        const res = await axios.get("http://localhost:4000/api/v1/stripekey");
+        const publishableKey=res.data.stripekey;
+        console.log(publishableKey);
+        setStripePromise(loadStripe(publishableKey));
+      } catch {}
+    };
+    stripekey();
+  }, []);
+  useEffect(() => {
+    const getclientsecret= async () => {
+      try 
+      {
+        const res = await axios.post("http://localhost:4000/api/v1/checkout/payment",{
+          amount:cart.total,
+        });
+        console.log(res);
+        const clientSecret=res.data.clientSecret;
+        console.log(clientSecret);
+        setClientSecret(clientSecret);
+      } catch {}
+    };
+    getclientsecret();
+  }, []);
+  
+ 
   return (
     <Container>
       <Navbar />
@@ -268,13 +259,15 @@ const Cart = () => {
               <SummaryItemText>Total</SummaryItemText>
               <SummaryItemPrice>INR {cart.total}</SummaryItemPrice>
             </SummaryItem>
-              <Button onClick={makepRequest}>CHECKOUT NOW</Button>
+            {clientSecret && stripePromise && (
+            <Elements stripe={stripePromise}>
+              <CheckoutForm  secret={clientSecret} amount={cart.total*100} cartproducts={cart.products}/>
+            </Elements>
+          )}
           </Summary>
         </Bottom>
       </Wrapper>
-      <Footer />
     </Container>
   );
 };
-
 export default Cart;
