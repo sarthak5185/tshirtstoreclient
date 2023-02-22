@@ -260,7 +260,7 @@ const Cart = () => {
               <SummaryItemPrice>INR {cart.total}</SummaryItemPrice>
             </SummaryItem>
             {clientSecret && stripePromise && (
-            <Elements stripe={stripePromise}>
+            <Elements stripe={stripePromise} options={{clientSecret}}>
               <CheckoutForm  secret={clientSecret} amount={cart.total*100} cartproducts={cart.products}/>
             </Elements>
           )}
