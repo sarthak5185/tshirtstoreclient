@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {PaymentElement,CardElement,useStripe,useElements} from '@stripe/react-stripe-js';
-
+import { Redirect } from "react-router-dom";
 export const CheckoutForm = ({secret,clientamount,cartproducts}) => 
 {
     const stripe = useStripe();
@@ -15,9 +15,12 @@ export const CheckoutForm = ({secret,clientamount,cartproducts}) =>
         return;
       }
       setIsProcessing(true);
+      
       console.log(window.location.origin);
       console.log(`secret is ${secret}`);
-      const {error:stripeError,paymentIntent} = await stripe.confirmCardPayment(
+      console.log(elements.getElement(CardElement));
+  
+      stripe.confirmCardPayment(
         secret,
         {
           payment_method: {
@@ -25,18 +28,15 @@ export const CheckoutForm = ({secret,clientamount,cartproducts}) =>
             billing_details: {
               name: 'Jenny Rosen',
             },
-            return_url: `${window.location.origin}/completion`,
           },
         }
-      );
-      if(stripeError)
-      {
-        setMessage(stripeError.message);
-      }
-      else
-      {
-        setMessage(`Payment ${paymentIntent.status}: ${paymentIntent.id}`)
-      }
+      ).then(result=>{
+        console.log(result);
+        console.log("SUCCESS");
+        return <Redirect to="/completion" />
+      }).catch((error)=>{
+        console.log(error);
+      })
       setIsProcessing(false);
 };
 return (
