@@ -12,19 +12,35 @@ function Completion() {
   console.log(cart);
   console.log(location);
   console.log(currentUser?.token);
+  console.log(currentUser.user._id);
   useEffect(() => {
     const createOrder = async () => {
       try {
-        const res = await axios.post("http://localhost:4000/api/v1/order/create", {
-          user: currentUser._id,
-          products: cart.products.map((item) => ({
-            productId: item._id,
-            quantity: item._quantity,
+        const res = await userRequest.post("/order/create", {
+          userid:currentUser.user._id,
+          orderItems: cart.products.map((item) => ({
+          name:item.name,
+          quantity: item.quantity,
+          image:item.photos[0].secure_url,
+          price:item.price,
+          product:item._id,
           })),
-          amount: cart.total,
-          address:"13 sn",
+          shippingInfo: {
+            address: "1 Jaipur",
+            city: "Jaipur",
+            phoneNo: "9898989898",
+            postalCode: "302020",
+            state: "Rajasthan",
+            country: "India"
+          },
+          paymentInfo: {
+            id: "testString"
+          },
+          taxAmount:0,
+          shippingAmount:0,
+          totalAmount:cart.total,
         });
-        setOrderId(res.data._id);
+        setOrderId(res.data.id);
       } catch {}
     };
      createOrder();
